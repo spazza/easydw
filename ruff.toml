@@ -1,0 +1,19 @@
+[lint]
+select = ['ALL']
+ignore = [
+    'TRY002', # Generic exception definition
+    'D203',   # Requires a blank line before class docstrings.
+    'D211',   # Forbids a blank line before class docstrings.
+    'D213',   # Multi-line docstring summary must be on the second line.
+    'COM812'  # Trailing commas, the formatter handles commas automatically.
+]
+
+per-file-ignores = {
+    "test/**/*.py" = ["S101"]
+}
+
+preview = false
+
+[format]
+docstring-code-format = true
+docstring-code-line-length = 20
