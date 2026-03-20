@@ -1,12 +1,21 @@
 """Module for testing the dimension type 1 functionalities."""
 
 from datetime import datetime, timezone
+from typing import override
 from unittest.mock import Mock, patch
 
 import polars as pl
 from polars.testing import assert_frame_equal
 
 from easydw.dimension import DimensionType1
+
+
+class TestableDimensionType1(DimensionType1):
+    """Concrete test double for `DimensionType1`."""
+
+    @override
+    def bind(self, df: pl.DataFrame) -> None:
+        """No-op bind implementation for abstract interface compliance in tests."""
 
 
 def test_insert_empty_table() -> None:
@@ -33,11 +42,11 @@ def test_insert_empty_table() -> None:
         }
     )
 
-    test_dimension = DimensionType1(
+    test_dimension = TestableDimensionType1(
         name="TestDimension",
         dwh=mock_db,
     )
-    test_dimension.insert(test_df, key_columns=["key-column"])
+    test_dimension.insert(test_df, keys=["key-column"])
 
     expected_df = pl.DataFrame(
         {
@@ -83,11 +92,11 @@ def test_insert_full_table_all_overlaps() -> None:
             }
         )
 
-        test_dimension = DimensionType1(
+        test_dimension = TestableDimensionType1(
             name="TestDimension",
             dwh=mock_db,
         )
-        test_dimension.insert(test_df, key_columns=["key-column"])
+        test_dimension.insert(test_df, keys=["key-column"])
 
         expected_df = pl.DataFrame(
             {
@@ -135,11 +144,11 @@ def test_insert_full_table_with_overlaps() -> None:
             }
         )
 
-        test_dimension = DimensionType1(
+        test_dimension = TestableDimensionType1(
             name="TestDimension",
             dwh=mock_db,
         )
-        test_dimension.insert(test_df, key_columns=["key-column"])
+        test_dimension.insert(test_df, keys=["key-column"])
 
         expected_update_df = pl.DataFrame(
             {
@@ -192,11 +201,11 @@ def test_insert_full_table_no_overlaps() -> None:
         }
     )
 
-    test_dimension = DimensionType1(
+    test_dimension = TestableDimensionType1(
         name="TestDimension",
         dwh=mock_db,
     )
-    test_dimension.insert(test_df, key_columns=["key-column"])
+    test_dimension.insert(test_df, keys=["key-column"])
 
     expected_df = pl.DataFrame(
         {
@@ -243,11 +252,11 @@ def test_insert_full_table_with_overlaps_no_changes() -> None:
             }
         )
 
-        test_dimension = DimensionType1(
+        test_dimension = TestableDimensionType1(
             name="TestDimension",
             dwh=mock_db,
         )
-        test_dimension.insert(test_df, key_columns=["key-column"])
+        test_dimension.insert(test_df, keys=["key-column"])
 
         expected_df = pl.DataFrame(
             {

@@ -1,12 +1,21 @@
 """Module for testing the dimension type 2 functionalities."""
 
 from datetime import datetime, timezone
+from typing import override
 from unittest.mock import Mock, patch
 
 import polars as pl
 from polars.testing import assert_frame_equal
 
 from easydw.dimension import DimensionType2
+
+
+class TestableDimensionType2(DimensionType2):
+    """Concrete test double for `DimensionType2`."""
+
+    @override
+    def bind(self, df: pl.DataFrame) -> None:
+        """No-op bind implementation for abstract interface compliance in tests."""
 
 
 def test_insert_empty_table() -> None:
@@ -40,11 +49,11 @@ def test_insert_empty_table() -> None:
             }
         )
 
-        test_dimension = DimensionType2(
+        test_dimension = TestableDimensionType2(
             name="TestDimension",
             dwh=mock_db,
         )
-        test_dimension.insert(test_df, key_columns=["key-column"])
+        test_dimension.insert(test_df, keys=["key-column"])
 
         expected_df = pl.DataFrame(
             {
@@ -94,11 +103,11 @@ def test_insert_full_table_all_overlaps() -> None:
             }
         )
 
-        test_dimension = DimensionType2(
+        test_dimension = TestableDimensionType2(
             name="TestDimension",
             dwh=mock_db,
         )
-        test_dimension.insert(test_df, key_columns=["key-column"])
+        test_dimension.insert(test_df, keys=["key-column"])
 
         expected_update_df = pl.DataFrame(
             {
@@ -165,11 +174,11 @@ def test_insert_full_table_with_overlaps() -> None:
             }
         )
 
-        test_dimension = DimensionType2(
+        test_dimension = TestableDimensionType2(
             name="TestDimension",
             dwh=mock_db,
         )
-        test_dimension.insert(test_df, key_columns=["key-column"])
+        test_dimension.insert(test_df, keys=["key-column"])
 
         expected_update_df = pl.DataFrame(
             {
@@ -234,11 +243,11 @@ def test_insert_full_table_no_overlaps() -> None:
             }
         )
 
-        test_dimension = DimensionType2(
+        test_dimension = TestableDimensionType2(
             name="TestDimension",
             dwh=mock_db,
         )
-        test_dimension.insert(test_df, key_columns=["key-column"])
+        test_dimension.insert(test_df, keys=["key-column"])
 
         expected_insert_df = pl.DataFrame(
             {
@@ -281,11 +290,11 @@ def test_insert_full_table_no_change() -> None:
         }
     )
 
-    test_dimension = DimensionType2(
+    test_dimension = TestableDimensionType2(
         name="TestDimension",
         dwh=mock_db,
     )
-    test_dimension.insert(test_df, key_columns=["key-column"])
+    test_dimension.insert(test_df, keys=["key-column"])
 
     mock_db.select.assert_called_once_with("TestDimension", query=None, params=None)
     assert mock_db.update.call_count == 0
@@ -332,11 +341,11 @@ def test_insert_with_already_closed_records() -> None:
             }
         )
 
-        test_dimension = DimensionType2(
+        test_dimension = TestableDimensionType2(
             name="TestDimension",
             dwh=mock_db,
         )
-        test_dimension.insert(test_df, key_columns=["key-column"])
+        test_dimension.insert(test_df, keys=["key-column"])
 
         expected_update_df = pl.DataFrame(
             {

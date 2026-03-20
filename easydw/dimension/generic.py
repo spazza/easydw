@@ -46,21 +46,41 @@ class Dimension(ABC):
         return df
 
     @abstractmethod
-    def insert(self, df: pl.DataFrame, key_columns: list[str]) -> None:
+    def insert(self, df: pl.DataFrame, keys: list[str]) -> None:
         """Insert records contained in `df` in the dimension table.
 
         :param df: Dataframe with records to load
         :type df: pl.DataFrame
-        :param key_columns: Key columns for identifying unique records
-        :type key_columns: list[str]
+        :param keys: Key columns for identifying unique records
+        :type keys: list[str]
         """
 
     def _identify_new_records(
-        self, df: pl.DataFrame, dwh_df: pl.DataFrame, key_columns: list[str]
+        self, df: pl.DataFrame, dwh_df: pl.DataFrame, keys: list[str]
     ) -> pl.DataFrame:
-        return df.join(dwh_df.select(key_columns), on=key_columns, how="anti")
+        # Align types with `df` in case `dwh_df` has different types
+        # (e.g., due to NULLs or type inference)
+
+        keys_df = dwh_df.select(keys)
+        keys_df = keys_df.with_columns([pl.col(k).cast(df.schema[k]) for k in keys])
+
+        return df.join(keys_df, on=keys, how="anti")
 
     def _identify_existing_records(
-        self, df: pl.DataFrame, dwh_df: pl.DataFrame, key_columns: list[str]
+        self, df: pl.DataFrame, dwh_df: pl.DataFrame, keys: list[str]
     ) -> pl.DataFrame:
-        return df.join(dwh_df.select(key_columns), on=key_columns, how="semi")
+        # Align types with `df` in case `dwh_df` has different types
+        # (e.g., due to NULLs or type inference)
+
+        keys_df = dwh_df.select(keys)
+        keys_df = keys_df.with_columns([pl.col(k).cast(df.schema[k]) for k in keys])
+
+        return df.join(keys_df, on=keys, how="semi")
+
+    @abstractmethod
+    def bind(self, df: pl.DataFrame) -> None:
+        """Bind the records contained in `df` to the dimension table.
+
+        :param df: Dataframe with records to load
+        :type df: pl.DataFrame
+        """

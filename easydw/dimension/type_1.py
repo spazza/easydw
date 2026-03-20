@@ -30,17 +30,17 @@ class DimensionType1(Dimension):
         UPDATE_DATE = "update_date"
 
     def _identify_existing_records(
-        self, df: pl.DataFrame, dwh_df: pl.DataFrame, key_columns: list[str]
+        self, df: pl.DataFrame, dwh_df: pl.DataFrame, keys: list[str]
     ) -> pl.DataFrame:
         if dwh_df.is_empty():
             return pl.DataFrame()
 
-        merged_df = df.join(dwh_df, on=key_columns, how="inner", suffix="_dwh")
+        merged_df = df.join(dwh_df, on=keys, how="inner", suffix="_dwh")
 
         dimension_columns = [
             column
             for column in dwh_df.columns
-            if column not in key_columns
+            if column not in keys
             and column not in vars(self.Constants).values()
             and column != "id"
         ]
@@ -57,24 +57,24 @@ class DimensionType1(Dimension):
 
         changed_records = merged_df.filter(pl.any_horizontal(comparison_exprs))
 
-        return df.join(changed_records.select(key_columns), on=key_columns, how="semi")
+        return df.join(changed_records.select(keys), on=keys, how="semi")
 
     @override
-    def insert(self, df: pl.DataFrame, key_columns: list[str]) -> None:
+    def insert(self, df: pl.DataFrame, keys: list[str]) -> None:
         """Load the records in the data warehouse.
 
         For type 1 dimensions, existing records are updated, and new records are
         inserted.
         :param df: Data to load
         :type df: pl.DataFrame
-        :param key_columns: Columns to identify unique records
-        :type key_columns: list[str]
+        :param keys: Columns to identify unique records
+        :type keys: list[str]
         """
         logger.info("Updating %s", self.name)
 
         dwh_df = self.extract()
 
-        updated_records = self._identify_existing_records(df, dwh_df, key_columns)
+        updated_records = self._identify_existing_records(df, dwh_df, keys)
 
         if updated_records.is_empty():
             logger.info("No records to update in %s", self.name)
@@ -84,10 +84,10 @@ class DimensionType1(Dimension):
                     self.Constants.UPDATE_DATE
                 )
             )
-            self.dwh.update(updated_records, self.name, key_columns)
+            self.dwh.update(updated_records, self.name, keys)
             logger.info("%s : updated %d records", self.name, updated_records.height)
 
-        new_records = self._identify_new_records(df, dwh_df, key_columns)
+        new_records = self._identify_new_records(df, dwh_df, keys)
 
         if new_records.is_empty():
             logger.info("No records to load in %s", self.name)

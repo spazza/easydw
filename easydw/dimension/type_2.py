@@ -32,7 +32,7 @@ class DimensionType2(Dimension):
         CURRENT_RECORD = "current_record"
 
     def _identify_existing_records(
-        self, df: pl.DataFrame, dwh_df: pl.DataFrame, key_columns: list[str]
+        self, df: pl.DataFrame, dwh_df: pl.DataFrame, keys: list[str]
     ) -> tuple[pl.DataFrame, pl.DataFrame]:
         dwh_df = dwh_df.filter(pl.col(self.Constants.CURRENT_RECORD))
 
@@ -42,12 +42,12 @@ class DimensionType2(Dimension):
         if dwh_df.is_empty():
             return pl.DataFrame(), pl.DataFrame()
 
-        merged_df = df.join(dwh_df, on=key_columns, how="inner", suffix="_dwh")
+        merged_df = df.join(dwh_df, on=keys, how="inner", suffix="_dwh")
 
         dimension_columns = [
             column
             for column in dwh_df.columns
-            if column not in key_columns
+            if column not in keys
             and column not in vars(self.Constants).values()
             and column != "id"
         ]
@@ -64,35 +64,29 @@ class DimensionType2(Dimension):
 
         changed_records = merged_df.filter(pl.any_horizontal(comparison_exprs))
 
-        old_records = dwh_df.join(
-            changed_records.select(key_columns), on=key_columns, how="semi"
-        )
+        old_records = dwh_df.join(changed_records.select(keys), on=keys, how="semi")
 
-        updated_records = df.join(
-            old_records.select(key_columns), on=key_columns, how="semi"
-        )
+        updated_records = df.join(old_records.select(keys), on=keys, how="semi")
 
         return old_records, updated_records
 
     @override
-    def insert(self, df: pl.DataFrame, key_columns: list[str]) -> None:
+    def insert(self, df: pl.DataFrame, keys: list[str]) -> None:
         """Load the records in the data warehouse.
 
         For type 2 dimensions, existing records that have been updated are closed
         (deactivated) and the new records are inserted with the new values.
         :param df: Data to load
         :type df: pl.DataFrame
-        :param key_columns: Columns to identify unique records
-        :type key_columns: list[str]
+        :param keys: Columns to identify unique records
+        :type keys: list[str]
         """
         logger.info("Updating %s", self.name)
 
         dwh_df = self.extract()
 
-        new_records = self._identify_new_records(df, dwh_df, key_columns)
-        old_records, updated_records = self._identify_existing_records(
-            df, dwh_df, key_columns
-        )
+        new_records = self._identify_new_records(df, dwh_df, keys)
+        old_records, updated_records = self._identify_existing_records(df, dwh_df, keys)
 
         if old_records.is_empty():
             logger.info("No old records to update in %s", self.name)
@@ -106,7 +100,7 @@ class DimensionType2(Dimension):
                 ]
             )
 
-            self.dwh.update(old_records, self.name, key_columns)
+            self.dwh.update(old_records, self.name, keys)
             logger.info("%s : closed %d records", self.name, old_records.height)
 
         if not updated_records.is_empty():

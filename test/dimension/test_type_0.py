@@ -1,11 +1,20 @@
 """Module for testing the dimension type 0 functionalities."""
 
+from typing import override
 from unittest.mock import Mock
 
 import polars as pl
 from polars.testing import assert_frame_equal
 
 from easydw.dimension import DimensionType0
+
+
+class TestableDimensionType0(DimensionType0):
+    """Concrete test double for `DimensionType0`."""
+
+    @override
+    def bind(self, df: pl.DataFrame) -> None:
+        """No-op bind implementation for abstract interface compliance in tests."""
 
 
 def test_insert_empty_table() -> None:
@@ -32,11 +41,11 @@ def test_insert_empty_table() -> None:
         }
     )
 
-    test_dimension = DimensionType0(
+    test_dimension = TestableDimensionType0(
         name="TestDimension",
         dwh=mock_db,
     )
-    test_dimension.insert(test_df, key_columns=["key-column"])
+    test_dimension.insert(test_df, keys=["key-column"])
 
     expected_df = pl.DataFrame(
         {
@@ -75,11 +84,11 @@ def test_insert_full_table_all_overlaps() -> None:
         }
     )
 
-    test_dimension = DimensionType0(
+    test_dimension = TestableDimensionType0(
         name="TestDimension",
         dwh=mock_db,
     )
-    test_dimension.insert(test_df, key_columns=["key-column"])
+    test_dimension.insert(test_df, keys=["key-column"])
 
     mock_db.select.assert_called_once_with("TestDimension", query=None, params=None)
     mock_db.insert.assert_not_called()
@@ -109,11 +118,11 @@ def test_insert_full_table_with_overlaps() -> None:
         }
     )
 
-    test_dimension = DimensionType0(
+    test_dimension = TestableDimensionType0(
         name="TestDimension",
         dwh=mock_db,
     )
-    test_dimension.insert(test_df, key_columns=["key-column"])
+    test_dimension.insert(test_df, keys=["key-column"])
 
     expected_df = pl.DataFrame(
         {"key-column": [40, 50], "column-1": [4, 5], "column-2": ["d", "e"]}
@@ -148,11 +157,11 @@ def test_insert_full_table_no_overlaps() -> None:
         }
     )
 
-    test_dimension = DimensionType0(
+    test_dimension = TestableDimensionType0(
         name="TestDimension",
         dwh=mock_db,
     )
-    test_dimension.insert(test_df, key_columns=["key-column"])
+    test_dimension.insert(test_df, keys=["key-column"])
 
     expected_df = test_df
     result_df = mock_db.insert.call_args[0][0]

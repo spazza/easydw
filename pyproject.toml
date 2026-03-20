@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "easydw"
+version = "1.0"
+dependencies = [
+    "SQLAlchemy>=2.0.46",
+    "polars>=1.37.1",
+    "psycopg2>=2.9.11",
+    "oracledb>=3.0.0",
+]
+requires-python =">=3.10"
+authors = [
+    { name = "Andrea Consonni"}
+]
+description = "Utility for simplifying the management of data warehouses dimensions and facts"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+keywords = ["dw", "dwh", "data warehouse"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Database :: Database Engines/Servers",
+    "Programming Language :: Python :: 3.10"
+]
