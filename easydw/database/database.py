@@ -69,12 +69,25 @@ class Database(ABC):
         """Establish a connection with the database."""
 
     def is_connected(self) -> bool:
-        """Check if the database connection is established.
+        """Check whether the database is reachable.
 
-        :return: True if connected, False otherwise
+        This validates both that an engine exists and that the database can
+        respond to a lightweight query.
+
+        :return: True if the database is reachable, False otherwise
         :rtype: bool
         """
-        return self.engine is not None
+        if self.engine is None:
+            return False
+
+        try:
+            with self.engine.connect() as connection:
+                connection.execute(select(1))
+        except SQLAlchemyError:
+            logger.exception("Database connectivity check failed.")
+            return False
+        else:
+            return True
 
     def get_engine(self) -> Engine:
         """Return the engine object.

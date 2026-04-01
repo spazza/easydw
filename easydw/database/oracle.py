@@ -23,6 +23,13 @@ class OracleDatabase(Database):
         logger.info("Trying to establish connection with %s", self.name)
         self.engine = create_engine(connection_string)
 
+        if self.is_connected():
+            logger.info("Successfully connected to %s", self.name)
+        else:
+            logger.error("Failed to connect to %s", self.name)
+            msg = f"Could not connect to {self.name}"
+            raise ConnectionError(msg)
+
     def _validate_params(self) -> None:
         required_params = ["user", "password", "host"]
         missing_params = [
