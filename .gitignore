@@ -1,10 +1,105 @@
-
-.venv/
-*.pyc
+# ------------------------------
+# Python bytecode and caches
+# ------------------------------
 __pycache__/
-.ruff_cache/
+*.py[cod]
+*$py.class
+
+# ------------------------------
+# Python virtual environments
+# ------------------------------
+.venv/
+venv/
+ENV/
+env/
+.envrc
+
+# ------------------------------
+# Local environment and secrets
+# ------------------------------
+.env
+.env.*
+!.env.example
+!.env.template
+
+# ------------------------------
+# Type checker / linter / test caches
+# ------------------------------
 .mypy_cache/
-.vscode/
-.idea/
-.DS_Store
 .pytest_cache/
+.ruff_cache/
+.pyre/
+.pytype/
+.hypothesis/
+
+# ------------------------------
+# Coverage reports
+# ------------------------------
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# ------------------------------
+# Build, packaging, and distribution
+# ------------------------------
+build/
+dist/
+site/
+pip-wheel-metadata/
+*.egg-info/
+.eggs/
+*.egg
+uv.lock
+
+# ------------------------------
+# Logs and runtime artifacts
+# ------------------------------
+*.log
+*.out
+*.err
+
+# ------------------------------
+# Jupyter
+# ------------------------------
+.ipynb_checkpoints/
+
+# ------------------------------
+# Tooling caches
+# ------------------------------
+.cache/
+.tox/
+.nox/
+
+# ------------------------------
+# IDE and editor directories
+# ------------------------------
+.idea/
+.vscode/
+*.code-workspace
+
+# ------------------------------
+# OS files
+# ------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ------------------------------
+# Docker and container local files
+# ------------------------------
+.docker/
+docker-compose.override.yml
+
+# ------------------------------
+# Misc temporary files
+# ------------------------------
+*.swp
+*.swo
+*~
+
+# ------------------------------
+# Project-specific
+# ------------------------------
+# Ignore local wheel artifacts if rebuilt locally.
+easydw-*.whl
