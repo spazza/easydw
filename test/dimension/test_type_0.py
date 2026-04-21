@@ -9,7 +9,7 @@ from polars.testing import assert_frame_equal
 from easydw.dimension import DimensionType0
 
 
-class TestableDimensionType0(DimensionType0):
+class _TestableDimensionType0(DimensionType0):
     """Concrete test double for `DimensionType0`."""
 
     @override
@@ -41,7 +41,7 @@ def test_insert_empty_table() -> None:
         }
     )
 
-    test_dimension = TestableDimensionType0(
+    test_dimension = _TestableDimensionType0(
         name="TestDimension",
         dwh=mock_db,
     )
@@ -84,7 +84,7 @@ def test_insert_full_table_all_overlaps() -> None:
         }
     )
 
-    test_dimension = TestableDimensionType0(
+    test_dimension = _TestableDimensionType0(
         name="TestDimension",
         dwh=mock_db,
     )
@@ -118,7 +118,7 @@ def test_insert_full_table_with_overlaps() -> None:
         }
     )
 
-    test_dimension = TestableDimensionType0(
+    test_dimension = _TestableDimensionType0(
         name="TestDimension",
         dwh=mock_db,
     )
@@ -157,7 +157,7 @@ def test_insert_full_table_no_overlaps() -> None:
         }
     )
 
-    test_dimension = TestableDimensionType0(
+    test_dimension = _TestableDimensionType0(
         name="TestDimension",
         dwh=mock_db,
     )

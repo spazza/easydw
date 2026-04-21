@@ -1,6 +1,6 @@
 """Module for managing ETL operations for type 2 dimensions in a data warehouse."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import override
 
 import polars as pl
@@ -30,6 +30,33 @@ class DimensionType2(Dimension):
         CREATION_DATE = "creation_date"
         DEACTIVATION_DATE = "deactivation_date"
         CURRENT_RECORD = "current_record"
+
+        CREATION_DATE_TYPE = pl.Utf8
+        DEACTIVATION_DATE_TYPE = pl.Utf8
+        CURRENT_RECORD_TYPE = pl.Boolean
+
+    def _validate_and_cast_scd2_columns(self, dwh_df: pl.DataFrame) -> pl.DataFrame:
+        required_columns = [
+            (self.Constants.CREATION_DATE, self.Constants.CREATION_DATE_TYPE),
+            (
+                self.Constants.DEACTIVATION_DATE,
+                self.Constants.DEACTIVATION_DATE_TYPE,
+            ),
+            (self.Constants.CURRENT_RECORD, self.Constants.CURRENT_RECORD_TYPE),
+        ]
+        missing_columns = [
+            column for column, _ in required_columns if column not in dwh_df.columns
+        ]
+        if missing_columns:
+            msg = (
+                "Missing required SCD type 2 columns in warehouse dataframe: "
+                f"{missing_columns}. Maybe this is not a type 2 dimension."
+            )
+            raise ValueError(msg)
+
+        return dwh_df.with_columns(
+            [pl.col(column).cast(dtype) for column, dtype in required_columns]
+        )
 
     def _identify_existing_records(
         self, df: pl.DataFrame, dwh_df: pl.DataFrame, keys: list[str]
@@ -84,6 +111,7 @@ class DimensionType2(Dimension):
         logger.info("Updating %s", self.name)
 
         dwh_df = self.extract()
+        dwh_df = self._validate_and_cast_scd2_columns(dwh_df)
 
         new_records = self._identify_new_records(df, dwh_df, keys)
         old_records, updated_records = self._identify_existing_records(df, dwh_df, keys)
@@ -93,9 +121,9 @@ class DimensionType2(Dimension):
         else:
             old_records = old_records.with_columns(
                 [
-                    pl.lit(datetime.now(tz="UTC").strftime("%Y-%m-%d %H:%M:%S")).alias(
-                        self.Constants.DEACTIVATION_DATE
-                    ),
+                    pl.lit(
+                        datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                    ).alias(self.Constants.DEACTIVATION_DATE),
                     pl.lit(value=False).alias(self.Constants.CURRENT_RECORD),
                 ]
             )
@@ -111,9 +139,9 @@ class DimensionType2(Dimension):
         else:
             new_records = new_records.with_columns(
                 [
-                    pl.lit(datetime.now(tz="UTC").strftime("%Y-%m-%d %H:%M:%S")).alias(
-                        self.Constants.CREATION_DATE
-                    ),
+                    pl.lit(
+                        datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                    ).alias(self.Constants.CREATION_DATE),
                     pl.lit(None).alias(self.Constants.DEACTIVATION_DATE),
                     pl.lit(value=True).alias(self.Constants.CURRENT_RECORD),
                 ]

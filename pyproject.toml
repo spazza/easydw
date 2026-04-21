@@ -4,19 +4,20 @@ build-backend = "hatchling.build"
 
 [project]
 name = "easydw"
-version = "1.0"
+version = "1.0.1"
 dependencies = [
     "SQLAlchemy>=2.0.46",
     "polars>=1.37.1",
     "psycopg2>=2.9.11",
     "oracledb>=3.0.0",
     "pytest>=9.0.3",
+    "ruff>=0.15.11",
 ]
 requires-python =">=3.10"
 authors = [
     { name = "Andrea Consonni"}
 ]
-description = "Utility for simplifying the management of data warehouses dimensions and facts"
+description = "Utility for simplifying the management of data warehouse dimensions and facts"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]

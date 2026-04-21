@@ -27,8 +27,8 @@ class Dimension(ABC):
         :param dwh: Data warehouse connection
         :type dwh: Database
         """
-        self.name = name
-        self.dwh = dwh
+        self.name: str = name
+        self.dwh: Database = dwh
 
     def extract(self, query: str | None = None, **kwargs: dict) -> pl.DataFrame:
         """Extract the records from the data warehouse.

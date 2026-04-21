@@ -8,6 +8,7 @@ from sqlalchemy import (
     MetaData,
     Table,
     and_,
+    column,
     select,
     text,
     update,
@@ -199,7 +200,8 @@ class Database(ABC):
                     return 0
 
                 values_rows = [tuple(record[col] for col in columns) for record in data]
-                values_table = values(*columns).data(values_rows).alias("v")
+                values_columns = [column(col_name) for col_name in columns]
+                values_table = values(*values_columns).data(values_rows).alias("v")
 
                 stmt = (
                     update(table)
