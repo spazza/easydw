@@ -25,7 +25,6 @@ def test_insert_empty_table() -> None:
     should be inserted.
     """
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    mock_timestamp = mock_datetime.strftime("%Y-%m-%d %H:%M:%S")
     with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
@@ -34,8 +33,8 @@ def test_insert_empty_table() -> None:
                 "key-column": pl.Int64,
                 "column-1": pl.Int64,
                 "column-2": pl.Utf8,
-                "creation_date": pl.Utf8,
-                "deactivation_date": pl.Utf8,
+                "creation_date": pl.Datetime(time_zone="UTC"),
+                "deactivation_date": pl.Datetime(time_zone="UTC"),
                 "current_record": pl.Boolean,
             }
         )
@@ -60,7 +59,7 @@ def test_insert_empty_table() -> None:
                 "key-column": [10, 20, 30, 40, 50],
                 "column-1": [1, 2, 3, 4, 5],
                 "column-2": ["a", "b", "c", "d", "e"],
-                "creation_date": [mock_timestamp] * 5,
+                "creation_date": [mock_datetime] * 5,
                 "deactivation_date": [None] * 5,
                 "current_record": [True] * 5,
             }
@@ -81,7 +80,6 @@ def test_insert_empty_table_no_types() -> None:
     should be inserted.
     """
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    mock_timestamp = mock_datetime.strftime("%Y-%m-%d %H:%M:%S")
     with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
@@ -116,7 +114,7 @@ def test_insert_empty_table_no_types() -> None:
                 "key-column": [10, 20, 30, 40, 50],
                 "column-1": [1, 2, 3, 4, 5],
                 "column-2": ["a", "b", "c", "d", "e"],
-                "creation_date": [mock_timestamp] * 5,
+                "creation_date": [mock_datetime] * 5,
                 "deactivation_date": [None] * 5,
                 "current_record": [True] * 5,
             }
@@ -133,8 +131,8 @@ def test_insert_full_table_all_overlaps() -> None:
 
     In this case, all the records have to be updated.
     """
+    creation_date = datetime(2023, 1, 1, tzinfo=timezone.utc)
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    mock_timestamp = mock_datetime.strftime("%Y-%m-%d %H:%M:%S")
     with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
@@ -143,7 +141,7 @@ def test_insert_full_table_all_overlaps() -> None:
                 "key-column": [10, 20, 30],
                 "column-1": [100, 200, 300],
                 "column-2": ["x", "y", "z"],
-                "creation_date": ["2023-01-01 00:00:00"] * 3,
+                "creation_date": [creation_date] * 3,
                 "deactivation_date": [None] * 3,
                 "current_record": [True] * 3,
             }
@@ -170,8 +168,8 @@ def test_insert_full_table_all_overlaps() -> None:
                 "key-column": [10, 20, 30],
                 "column-1": [100, 200, 300],
                 "column-2": ["x", "y", "z"],
-                "creation_date": ["2023-01-01 00:00:00"] * 3,
-                "deactivation_date": [mock_timestamp] * 3,
+                "creation_date": [creation_date] * 3,
+                "deactivation_date": [mock_datetime] * 3,
                 "current_record": [False] * 3,
             }
         )
@@ -187,7 +185,7 @@ def test_insert_full_table_all_overlaps() -> None:
                 "key-column": [10, 20, 30],
                 "column-1": [101, 201, 301],
                 "column-2": ["a", "b", "c"],
-                "creation_date": [mock_timestamp] * 3,
+                "creation_date": [mock_datetime] * 3,
                 "deactivation_date": [None] * 3,
                 "current_record": [True] * 3,
             }
@@ -204,8 +202,8 @@ def test_insert_full_table_with_overlaps() -> None:
 
     Existing records should be updated, and new records should be inserted.
     """
+    creation_date = datetime(2023, 1, 1, tzinfo=timezone.utc)
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    mock_timestamp = mock_datetime.strftime("%Y-%m-%d %H:%M:%S")
     with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
@@ -214,7 +212,7 @@ def test_insert_full_table_with_overlaps() -> None:
                 "key-column": [10, 20],
                 "column-1": [100, 200],
                 "column-2": ["x", "y"],
-                "creation_date": ["2023-01-01 00:00:00"] * 2,
+                "creation_date": [creation_date] * 2,
                 "deactivation_date": [None] * 2,
                 "current_record": [True] * 2,
             }
@@ -241,8 +239,8 @@ def test_insert_full_table_with_overlaps() -> None:
                 "key-column": [10],
                 "column-1": [100],
                 "column-2": ["x"],
-                "creation_date": ["2023-01-01 00:00:00"],
-                "deactivation_date": [mock_timestamp],
+                "creation_date": [creation_date],
+                "deactivation_date": [mock_datetime],
                 "current_record": [False],
             }
         )
@@ -255,7 +253,7 @@ def test_insert_full_table_with_overlaps() -> None:
                 "key-column": [10, 30],
                 "column-1": [101, 301],
                 "column-2": ["a", "c"],
-                "creation_date": [mock_timestamp] * 2,
+                "creation_date": [mock_datetime] * 2,
                 "deactivation_date": [None] * 2,
                 "current_record": [True] * 2,
             }
@@ -274,8 +272,8 @@ def test_insert_full_table_no_overlaps() -> None:
 
     All records should be inserted.
     """
+    creation_date = datetime(2023, 1, 1, tzinfo=timezone.utc)
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    mock_timestamp = mock_datetime.strftime("%Y-%m-%d %H:%M:%S")
     with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
@@ -284,7 +282,7 @@ def test_insert_full_table_no_overlaps() -> None:
                 "key-column": [1, 2],
                 "column-1": [10, 20],
                 "column-2": ["a", "b"],
-                "creation_date": ["2023-01-01 00:00:00"] * 2,
+                "creation_date": [creation_date] * 2,
                 "deactivation_date": [None] * 2,
                 "current_record": [True] * 2,
             }
@@ -310,7 +308,7 @@ def test_insert_full_table_no_overlaps() -> None:
                 "key-column": [3, 4],
                 "column-1": [30, 40],
                 "column-2": ["c", "d"],
-                "creation_date": [mock_timestamp] * 2,
+                "creation_date": [mock_datetime] * 2,
                 "deactivation_date": [None] * 2,
                 "current_record": [True] * 2,
             }
@@ -326,13 +324,14 @@ def test_insert_full_table_no_change() -> None:
 
     No updates or inserts should occur.
     """
+    creation_date = datetime(2023, 1, 1, tzinfo=timezone.utc)
     mock_db = Mock()
     mock_db.select.return_value = pl.DataFrame(
         {
             "key-column": [10, 20, 30],
             "column-1": [100, 200, 300],
             "column-2": ["x", "y", "z"],
-            "creation_date": ["2023-01-01 00:00:00"] * 3,
+            "creation_date": [creation_date] * 3,
             "deactivation_date": [None] * 3,
             "current_record": [True] * 3,
         }
@@ -363,7 +362,6 @@ def test_insert_with_already_closed_records() -> None:
     Existing records should be updated, and new records should be inserted.
     """
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    mock_timestamp = mock_datetime.strftime("%Y-%m-%d %H:%M:%S")
     with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
@@ -373,15 +371,15 @@ def test_insert_with_already_closed_records() -> None:
                 "column-1": [100, 101, 200, 201],
                 "column-2": ["x", "x", "y", "y"],
                 "creation_date": [
-                    "2023-01-01 00:00:00",
-                    "2023-02-01 00:00:00",
-                    "2023-05-01 00:00:00",
-                    "2023-07-01 00:00:00",
+                    datetime(2023, 1, 1, tzinfo=timezone.utc),
+                    datetime(2023, 2, 1, tzinfo=timezone.utc),
+                    datetime(2023, 5, 1, tzinfo=timezone.utc),
+                    datetime(2023, 7, 1, tzinfo=timezone.utc),
                 ],
                 "deactivation_date": [
-                    "2023-02-01 00:00:00",
+                    datetime(2023, 2, 1, tzinfo=timezone.utc),
                     None,
-                    "2023-07-01 00:00:00",
+                    datetime(2023, 7, 1, tzinfo=timezone.utc),
                     None,
                 ],
                 "current_record": [False, True, False, True],
@@ -408,8 +406,8 @@ def test_insert_with_already_closed_records() -> None:
                 "key-column": [10],
                 "column-1": [101],
                 "column-2": ["x"],
-                "creation_date": ["2023-02-01 00:00:00"],
-                "deactivation_date": [mock_timestamp],
+                "creation_date": [datetime(2023, 2, 1, tzinfo=timezone.utc)],
+                "deactivation_date": [mock_datetime],
                 "current_record": [False],
             }
         )
@@ -422,7 +420,7 @@ def test_insert_with_already_closed_records() -> None:
                 "key-column": [10],
                 "column-1": [102],
                 "column-2": ["x"],
-                "creation_date": [mock_timestamp],
+                "creation_date": [mock_datetime],
                 "deactivation_date": [None],
                 "current_record": [True],
             }

@@ -8,10 +8,8 @@ version = "1.0.1"
 dependencies = [
     "SQLAlchemy>=2.0.46",
     "polars>=1.37.1",
-    "psycopg2>=2.9.11",
+    "psycopg2-binary>=2.9.11",
     "oracledb>=3.0.0",
-    "pytest>=9.0.3",
-    "ruff>=0.15.11",
 ]
 requires-python =">=3.10"
 authors = [
@@ -27,4 +25,10 @@ classifiers = [
     "Intended Audience :: Developers",
     "Topic :: Database :: Database Engines/Servers",
     "Programming Language :: Python :: 3.10"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "ruff"
 ]

@@ -31,8 +31,8 @@ class DimensionType2(Dimension):
         DEACTIVATION_DATE = "deactivation_date"
         CURRENT_RECORD = "current_record"
 
-        CREATION_DATE_TYPE = pl.Utf8
-        DEACTIVATION_DATE_TYPE = pl.Utf8
+        CREATION_DATE_TYPE = pl.Datetime(time_zone="UTC")
+        DEACTIVATION_DATE_TYPE = pl.Datetime(time_zone="UTC")
         CURRENT_RECORD_TYPE = pl.Boolean
 
     def _validate_and_cast_scd2_columns(self, dwh_df: pl.DataFrame) -> pl.DataFrame:
@@ -122,7 +122,7 @@ class DimensionType2(Dimension):
             old_records = old_records.with_columns(
                 [
                     pl.lit(
-                        datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                        datetime.now(tz=timezone.utc)
                     ).alias(self.Constants.DEACTIVATION_DATE),
                     pl.lit(value=False).alias(self.Constants.CURRENT_RECORD),
                 ]
@@ -140,7 +140,7 @@ class DimensionType2(Dimension):
             new_records = new_records.with_columns(
                 [
                     pl.lit(
-                        datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                        datetime.now(tz=timezone.utc)
                     ).alias(self.Constants.CREATION_DATE),
                     pl.lit(None).alias(self.Constants.DEACTIVATION_DATE),
                     pl.lit(value=True).alias(self.Constants.CURRENT_RECORD),
