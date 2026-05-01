@@ -68,9 +68,8 @@ def test_insert_full_table_all_overlaps() -> None:
     In this case, all the records have to be updated.
     """
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    mock_timestamp = mock_datetime.strftime("%Y-%m-%d %H:%M:%S")
     with (
-        patch("easydw.dimension.type_1.datetime") as mock_datetime_module,
+        patch("easydw.dimension.generic.datetime") as mock_datetime_module,
     ):
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
@@ -103,7 +102,7 @@ def test_insert_full_table_all_overlaps() -> None:
                 "key-column": [10, 20, 30, 40, 50],
                 "column-1": [6, 7, 8, 9, 10],
                 "column-2": ["f", "g", "h", "i", "j"],
-                "update_date": [mock_timestamp] * 5,
+                "update_date": [mock_datetime] * 5,
             }
         )
         result_df = mock_db.update.call_args[0][0]
@@ -119,9 +118,8 @@ def test_insert_full_table_with_overlaps() -> None:
     In this case, existing records should be updated and new records should be inserted.
     """
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    mock_timestamp = mock_datetime.strftime("%Y-%m-%d %H:%M:%S")
     with (
-        patch("easydw.dimension.type_1.datetime") as mock_datetime_module,
+        patch("easydw.dimension.generic.datetime") as mock_datetime_module,
     ):
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
@@ -155,7 +153,7 @@ def test_insert_full_table_with_overlaps() -> None:
                 "key-column": [10, 20, 30],
                 "column-1": [6, 7, 8],
                 "column-2": ["f", "g", "h"],
-                "update_date": [mock_timestamp] * 3,
+                "update_date": [mock_datetime] * 3,
             }
         )
         result_update_df = mock_db.update.call_args[0][0].sort("key-column")
@@ -229,9 +227,8 @@ def test_insert_full_table_with_overlaps_no_changes() -> None:
     not be updated.
     """
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    mock_timestamp = mock_datetime.strftime("%Y-%m-%d %H:%M:%S")
     with (
-        patch("easydw.dimension.type_1.datetime") as mock_datetime_module,
+        patch("easydw.dimension.generic.datetime") as mock_datetime_module,
     ):
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
@@ -263,7 +260,7 @@ def test_insert_full_table_with_overlaps_no_changes() -> None:
                 "key-column": [40, 50],
                 "column-1": [9, 10],
                 "column-2": ["i", "j"],
-                "update_date": [mock_timestamp] * 2,
+                "update_date": [mock_datetime] * 2,
             }
         )
         result_df = mock_db.update.call_args[0][0].sort("key-column")

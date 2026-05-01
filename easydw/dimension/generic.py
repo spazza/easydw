@@ -1,6 +1,8 @@
 """Module for generic dimensions operations."""
 
 from abc import ABC, abstractmethod
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import polars as pl
 
@@ -17,18 +19,31 @@ class Dimension(ABC):
     :type name: str
     :param dwh: Data warehouse connection
     :type dwh: Database
+    :param timezone: Timezone to use for datetime operations, defaults to "UTC"
+    :type timezone: str, optional
     """
 
-    def __init__(self, name: str, dwh: Database) -> None:
+    def __init__(self, name: str, dwh: Database, timezone: str = "UTC") -> None:
         """Initialize the Dimension class.
 
         :param name: Name of the dimension
         :type name: str
         :param dwh: Data warehouse connection
         :type dwh: Database
+        :param timezone: Timezone to use for datetime operations, defaults to "UTC"
+        :type timezone: str, optional
         """
         self.name: str = name
         self.dwh: Database = dwh
+        self.timezone: str = timezone
+
+    def _get_now(self) -> datetime:
+        """Return the current datetime in the configured timezone.
+
+        :return: Current datetime with timezone info
+        :rtype: datetime
+        """
+        return datetime.now(ZoneInfo(self.timezone))
 
     def extract(self, query: str | None = None, **kwargs: dict) -> pl.DataFrame:
         """Extract the records from the data warehouse.

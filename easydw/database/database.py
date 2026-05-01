@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 
 import polars as pl
+from polars.exceptions import ComputeError
 from sqlalchemy import (
     Engine,
     MetaData,
@@ -133,7 +134,16 @@ class Database(ABC):
                     table = self._get_table(table_name)
                     stmt = select(table)
 
-                return pl.read_database(stmt, connection)
+                try:
+                    return pl.read_database(stmt, connection)
+                except ComputeError:
+                    # Fallback for heterogeneous row values (for example mixed datetime
+                    # precision) that require a wider schema inference pass.
+                    return pl.read_database(
+                        stmt,
+                        connection,
+                        infer_schema_length=None,
+                    )
 
         except SQLAlchemyError:
             logger.exception("Exception occurred while selecting data.")

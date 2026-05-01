@@ -1,6 +1,5 @@
 """Module for managing ETL operations for type 1 dimensions in a data warehouse."""
 
-from datetime import datetime
 from typing import override
 
 import polars as pl
@@ -80,7 +79,7 @@ class DimensionType1(Dimension):
             logger.info("No records to update in %s", self.name)
         else:
             updated_records = updated_records.with_columns(
-                pl.lit(datetime.now(tz="UTC").strftime("%Y-%m-%d %H:%M:%S")).alias(
+                pl.lit(self._get_now()).alias(
                     self.Constants.UPDATE_DATE
                 )
             )

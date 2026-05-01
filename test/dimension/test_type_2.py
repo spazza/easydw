@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 from typing import override
 from unittest.mock import Mock, patch
+from zoneinfo import ZoneInfo
 
 import polars as pl
 from polars.testing import assert_frame_equal
@@ -25,7 +26,7 @@ def test_insert_empty_table() -> None:
     should be inserted.
     """
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
+    with patch("easydw.dimension.generic.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
         mock_db.select.return_value = pl.DataFrame(
@@ -33,8 +34,8 @@ def test_insert_empty_table() -> None:
                 "key-column": pl.Int64,
                 "column-1": pl.Int64,
                 "column-2": pl.Utf8,
-                "creation_date": pl.Datetime(time_zone="UTC"),
-                "deactivation_date": pl.Datetime(time_zone="UTC"),
+                "creation_date": pl.Datetime,
+                "deactivation_date": pl.Datetime,
                 "current_record": pl.Boolean,
             }
         )
@@ -80,7 +81,7 @@ def test_insert_empty_table_no_types() -> None:
     should be inserted.
     """
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
+    with patch("easydw.dimension.generic.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
         mock_db.select.return_value = pl.DataFrame(
@@ -133,7 +134,7 @@ def test_insert_full_table_all_overlaps() -> None:
     """
     creation_date = datetime(2023, 1, 1, tzinfo=timezone.utc)
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
+    with patch("easydw.dimension.generic.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
         mock_db.select.return_value = pl.DataFrame(
@@ -204,7 +205,7 @@ def test_insert_full_table_with_overlaps() -> None:
     """
     creation_date = datetime(2023, 1, 1, tzinfo=timezone.utc)
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
+    with patch("easydw.dimension.generic.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
         mock_db.select.return_value = pl.DataFrame(
@@ -274,7 +275,7 @@ def test_insert_full_table_no_overlaps() -> None:
     """
     creation_date = datetime(2023, 1, 1, tzinfo=timezone.utc)
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
+    with patch("easydw.dimension.generic.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
         mock_db.select.return_value = pl.DataFrame(
@@ -362,7 +363,7 @@ def test_insert_with_already_closed_records() -> None:
     Existing records should be updated, and new records should be inserted.
     """
     mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
-    with patch("easydw.dimension.type_2.datetime") as mock_datetime_module:
+    with patch("easydw.dimension.generic.datetime") as mock_datetime_module:
         mock_datetime_module.now.return_value = mock_datetime
         mock_db = Mock()
         mock_db.select.return_value = pl.DataFrame(
@@ -407,6 +408,81 @@ def test_insert_with_already_closed_records() -> None:
                 "column-1": [101],
                 "column-2": ["x"],
                 "creation_date": [datetime(2023, 2, 1, tzinfo=timezone.utc)],
+                "deactivation_date": [mock_datetime],
+                "current_record": [False],
+            }
+        )
+        result_update_df = mock_db.update.call_args[0][0]
+        assert mock_db.update.call_count == 1
+        assert_frame_equal(result_update_df, expected_update_df)
+
+        expected_insert_df = pl.DataFrame(
+            {
+                "key-column": [10],
+                "column-1": [102],
+                "column-2": ["x"],
+                "creation_date": [mock_datetime],
+                "deactivation_date": [None],
+                "current_record": [True],
+            }
+        )
+        result_insert_df = mock_db.insert.call_args[0][0]
+        assert mock_db.insert.call_count == 1
+        assert_frame_equal(result_insert_df, expected_insert_df)
+
+def test_insert_with_already_closed_records_with_timezone() -> None:
+    """Test the insertion with some records that are already closed.
+
+    Existing records should be updated, and new records should be inserted.
+    """
+    europe_rome_tz = ZoneInfo("Europe/Rome")
+    mock_datetime = datetime(2025, 1, 2, 3, 4, 5, tzinfo=europe_rome_tz)
+    with patch("easydw.dimension.generic.datetime") as mock_datetime_module:
+        mock_datetime_module.now.return_value = mock_datetime
+        mock_db = Mock()
+        mock_db.select.return_value = pl.DataFrame(
+            {
+                "key-column": [10, 10, 20, 20],
+                "column-1": [100, 101, 200, 201],
+                "column-2": ["x", "x", "y", "y"],
+                "creation_date": [
+                    datetime(2023, 1, 1, tzinfo=europe_rome_tz),
+                    datetime(2023, 2, 1, tzinfo=europe_rome_tz),
+                    datetime(2023, 5, 1, tzinfo=europe_rome_tz),
+                    datetime(2023, 7, 1, tzinfo=europe_rome_tz),
+                ],
+                "deactivation_date": [
+                    datetime(2023, 2, 1, tzinfo=europe_rome_tz),
+                    None,
+                    datetime(2023, 7, 1, tzinfo=europe_rome_tz),
+                    None,
+                ],
+                "current_record": [False, True, False, True],
+            }
+        )
+        mock_db.insert.return_value = 1
+
+        test_df = pl.DataFrame(
+            {
+                "key-column": [10],
+                "column-1": [102],
+                "column-2": ["x"],
+            }
+        )
+
+        test_dimension = _TestableDimensionType2(
+            name="TestDimension",
+            dwh=mock_db,
+            timezone="Europe/Rome",
+        )
+        test_dimension.insert(test_df, keys=["key-column"])
+
+        expected_update_df = pl.DataFrame(
+            {
+                "key-column": [10],
+                "column-1": [101],
+                "column-2": ["x"],
+                "creation_date": [datetime(2023, 2, 1, tzinfo=europe_rome_tz)],
                 "deactivation_date": [mock_datetime],
                 "current_record": [False],
             }

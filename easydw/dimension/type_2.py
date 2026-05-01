@@ -1,6 +1,5 @@
 """Module for managing ETL operations for type 2 dimensions in a data warehouse."""
 
-from datetime import datetime, timezone
 from typing import override
 
 import polars as pl
@@ -31,19 +30,32 @@ class DimensionType2(Dimension):
         DEACTIVATION_DATE = "deactivation_date"
         CURRENT_RECORD = "current_record"
 
-        CREATION_DATE_TYPE = pl.Datetime(time_zone="UTC")
-        DEACTIVATION_DATE_TYPE = pl.Datetime(time_zone="UTC")
-        CURRENT_RECORD_TYPE = pl.Boolean
+    def _get_required_scd2_columns(self) -> list[tuple[str, pl.DataType]]:
+        return [
+            (self.Constants.CREATION_DATE, pl.Datetime(time_zone=self.timezone)),
+            (self.Constants.DEACTIVATION_DATE, pl.Datetime(time_zone=self.timezone)),
+            (self.Constants.CURRENT_RECORD, pl.Boolean),
+        ]
+
+    def _normalize_datetime_expr(self, dwh_df: pl.DataFrame, column: str) -> pl.Expr:
+        expected_dtype = pl.Datetime(time_zone=self.timezone)
+        column_dtype = dwh_df.schema[column]
+
+        if isinstance(column_dtype, pl.Datetime):
+            if column_dtype.time_zone is None:
+                return pl.col(column).dt.replace_time_zone(self.timezone).cast(
+                    expected_dtype
+                )
+
+            if column_dtype.time_zone != self.timezone:
+                return pl.col(column).dt.convert_time_zone(self.timezone).cast(
+                    expected_dtype
+                )
+
+        return pl.col(column).cast(expected_dtype)
 
     def _validate_and_cast_scd2_columns(self, dwh_df: pl.DataFrame) -> pl.DataFrame:
-        required_columns = [
-            (self.Constants.CREATION_DATE, self.Constants.CREATION_DATE_TYPE),
-            (
-                self.Constants.DEACTIVATION_DATE,
-                self.Constants.DEACTIVATION_DATE_TYPE,
-            ),
-            (self.Constants.CURRENT_RECORD, self.Constants.CURRENT_RECORD_TYPE),
-        ]
+        required_columns = self._get_required_scd2_columns()
         missing_columns = [
             column for column, _ in required_columns if column not in dwh_df.columns
         ]
@@ -54,8 +66,18 @@ class DimensionType2(Dimension):
             )
             raise ValueError(msg)
 
+        datetime_columns = {
+            self.Constants.CREATION_DATE,
+            self.Constants.DEACTIVATION_DATE,
+        }
+
         return dwh_df.with_columns(
-            [pl.col(column).cast(dtype) for column, dtype in required_columns]
+            [
+                self._normalize_datetime_expr(dwh_df, column)
+                if column in datetime_columns
+                else pl.col(column).cast(dtype)
+                for column, dtype in required_columns
+            ]
         )
 
     def _identify_existing_records(
@@ -122,7 +144,7 @@ class DimensionType2(Dimension):
             old_records = old_records.with_columns(
                 [
                     pl.lit(
-                        datetime.now(tz=timezone.utc)
+                        self._get_now()
                     ).alias(self.Constants.DEACTIVATION_DATE),
                     pl.lit(value=False).alias(self.Constants.CURRENT_RECORD),
                 ]
@@ -140,7 +162,7 @@ class DimensionType2(Dimension):
             new_records = new_records.with_columns(
                 [
                     pl.lit(
-                        datetime.now(tz=timezone.utc)
+                        self._get_now()
                     ).alias(self.Constants.CREATION_DATE),
                     pl.lit(None).alias(self.Constants.DEACTIVATION_DATE),
                     pl.lit(value=True).alias(self.Constants.CURRENT_RECORD),
