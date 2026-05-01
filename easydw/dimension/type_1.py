@@ -79,9 +79,7 @@ class DimensionType1(Dimension):
             logger.info("No records to update in %s", self.name)
         else:
             updated_records = updated_records.with_columns(
-                pl.lit(self._get_now()).alias(
-                    self.Constants.UPDATE_DATE
-                )
+                pl.lit(self._get_now()).alias(self.Constants.UPDATE_DATE)
             )
             self.dwh.update(updated_records, self.name, keys)
             logger.info("%s : updated %d records", self.name, updated_records.height)

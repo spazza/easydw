@@ -43,13 +43,17 @@ class DimensionType2(Dimension):
 
         if isinstance(column_dtype, pl.Datetime):
             if column_dtype.time_zone is None:
-                return pl.col(column).dt.replace_time_zone(self.timezone).cast(
-                    expected_dtype
+                return (
+                    pl.col(column)
+                    .dt.replace_time_zone(self.timezone)
+                    .cast(expected_dtype)
                 )
 
             if column_dtype.time_zone != self.timezone:
-                return pl.col(column).dt.convert_time_zone(self.timezone).cast(
-                    expected_dtype
+                return (
+                    pl.col(column)
+                    .dt.convert_time_zone(self.timezone)
+                    .cast(expected_dtype)
                 )
 
         return pl.col(column).cast(expected_dtype)
@@ -143,9 +147,7 @@ class DimensionType2(Dimension):
         else:
             old_records = old_records.with_columns(
                 [
-                    pl.lit(
-                        self._get_now()
-                    ).alias(self.Constants.DEACTIVATION_DATE),
+                    pl.lit(self._get_now()).alias(self.Constants.DEACTIVATION_DATE),
                     pl.lit(value=False).alias(self.Constants.CURRENT_RECORD),
                 ]
             )
@@ -161,9 +163,7 @@ class DimensionType2(Dimension):
         else:
             new_records = new_records.with_columns(
                 [
-                    pl.lit(
-                        self._get_now()
-                    ).alias(self.Constants.CREATION_DATE),
+                    pl.lit(self._get_now()).alias(self.Constants.CREATION_DATE),
                     pl.lit(None).alias(self.Constants.DEACTIVATION_DATE),
                     pl.lit(value=True).alias(self.Constants.CURRENT_RECORD),
                 ]

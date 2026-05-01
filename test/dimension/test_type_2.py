@@ -430,6 +430,7 @@ def test_insert_with_already_closed_records() -> None:
         assert mock_db.insert.call_count == 1
         assert_frame_equal(result_insert_df, expected_insert_df)
 
+
 def test_insert_with_already_closed_records_with_timezone() -> None:
     """Test the insertion with some records that are already closed.
 
