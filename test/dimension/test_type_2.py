@@ -505,3 +505,43 @@ def test_insert_with_already_closed_records_with_timezone() -> None:
         result_insert_df = mock_db.insert.call_args[0][0]
         assert mock_db.insert.call_count == 1
         assert_frame_equal(result_insert_df, expected_insert_df)
+
+
+def test_insert_null_columns_not_treated_as_changed() -> None:
+    """Test that records with NULL in both source and DWH are not treated as changed.
+
+    When a nullable column is NULL in the incoming data and also NULL in the
+    existing DWH record, the record has not changed and must NOT trigger a
+    type-2 update.
+    """
+    creation_date = datetime(2023, 1, 1, tzinfo=timezone.utc)
+    mock_db = Mock()
+    mock_db.select.return_value = pl.DataFrame(
+        {
+            "key-column": [10, 20],
+            "column-1": [100, None],
+            "column-2": ["x", None],
+            "creation_date": [creation_date] * 2,
+            "deactivation_date": [None] * 2,
+            "current_record": [True] * 2,
+        }
+    )
+
+    # Incoming data is identical to DWH — NULL columns remain NULL.
+    test_df = pl.DataFrame(
+        {
+            "key-column": [10, 20],
+            "column-1": [100, None],
+            "column-2": ["x", None],
+        }
+    )
+
+    test_dimension = _TestableDimensionType2(
+        name="TestDimension",
+        dwh=mock_db,
+    )
+    test_dimension.insert(test_df, keys=["key-column"])
+
+    mock_db.select.assert_called_once_with("TestDimension", query=None, params=None)
+    assert mock_db.update.call_count == 0
+    assert mock_db.insert.call_count == 0

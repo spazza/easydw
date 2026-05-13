@@ -110,7 +110,7 @@ class DimensionType2(Dimension):
 
         comparison_exprs = [
             pl.when(pl.col(col).is_null() & pl.col(f"{col}_dwh").is_null())
-            .then(statement=True)
+            .then(statement=False)
             .otherwise(pl.col(col) != pl.col(f"{col}_dwh"))
             for col in dimension_columns
         ]
