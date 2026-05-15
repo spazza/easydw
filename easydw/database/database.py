@@ -9,11 +9,11 @@ from sqlalchemy import (
     MetaData,
     Table,
     and_,
-    column,
+    bindparam,
+    or_,
     select,
     text,
     update,
-    values,
 )
 from sqlalchemy import (
     insert as insert_,
@@ -209,17 +209,39 @@ class Database(ABC):
                     logger.warning("No columns to update (all are key columns)")
                     return 0
 
-                values_rows = [tuple(record[col] for col in columns) for record in data]
-                values_columns = [column(col_name) for col_name in columns]
-                values_table = values(*values_columns).data(values_rows).alias("v")
+                # Use dedicated bind params for key predicates to avoid collisions
+                # with update values and keep SQL typing for None values.
+                key_binds = {
+                    key: bindparam(f"key_{key}", type_=table.c[key].type)
+                    for key in keys
+                }
+
+                where_conditions = [
+                    or_(
+                        table.c[key] == key_binds[key],
+                        and_(table.c[key].is_(None), key_binds[key].is_(None)),
+                    )
+                    for key in keys
+                ]
 
                 stmt = (
                     update(table)
-                    .where(and_(*[table.c[key] == values_table.c[key] for key in keys]))
-                    .values({col: values_table.c[col] for col in update_columns})
+                    .where(*where_conditions)
+                    .values(
+                        {
+                            col: bindparam(col, type_=table.c[col].type)
+                            for col in update_columns
+                        }
+                    )
                 )
 
-                result = connection.execute(stmt)
+                payload = []
+                for record in data:
+                    params = {col: record[col] for col in update_columns}
+                    params.update({f"key_{key}": record[key] for key in keys})
+                    payload.append(params)
+
+                result = connection.execute(stmt, payload)
                 return result.rowcount if result.rowcount is not None else 0
 
         except SQLAlchemyError:
