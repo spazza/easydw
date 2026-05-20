@@ -4,12 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "easydw"
-version = "1.0.5"
+version = "1.0.6"
 dependencies = [
     "SQLAlchemy>=2.0.46",
     "polars>=1.37.1",
     "psycopg2-binary>=2.9.11",
     "oracledb>=3.0.0",
+    "pyodbc>=5.0.0",
 ]
 requires-python =">=3.10"
 authors = [
@@ -31,4 +32,10 @@ classifiers = [
 dev = [
   "pytest",
   "ruff"
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "ruff>=0.15.11",
 ]
