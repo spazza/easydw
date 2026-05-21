@@ -73,13 +73,15 @@ class MSSQLDatabase(Database):
         port = self.params.get("port", 1433)
         database = self.params.get("database")
         driver = self.params.get("driver", "ODBC Driver 17 for SQL Server")
+        trust_server_certificate = self.params.get("trust_server_certificate", "no")
 
         odbc_params = (
             f"DRIVER={{{driver}}};"
             f"SERVER={host},{port};"
             f"DATABASE={database};"
             f"UID={user};"
-            f"PWD={quote_plus(password)}"
+            f"PWD={quote_plus(password)};"
+            f"TrustServerCertificate={trust_server_certificate}"
         )
 
         return f"mssql+pyodbc:///?odbc_connect={quote_plus(odbc_params)}"
